@@ -1,0 +1,101 @@
+// Prisma schema for Portfolio Manager
+// Using SQLite for simplicity - easily migratable to PostgreSQL
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// User model for authentication
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String   // bcrypt hashed
+  name      String
+  role      String   @default("user") // "admin" | "user"
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  portfolios Portfolio[]
+}
+
+// Portfolio - one per family member or strategy
+model Portfolio {
+  id           String   @id @default(cuid())
+  name         String
+  ownerName    String
+  baseCurrency String   @default("USD") // USD, HKD, TWD, CNY
+  description  String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  userId   String
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  holdings Holding[]
+
+  @@index([userId])
+}
+
+// Individual holding within a portfolio
+model Holding {
+  id            String   @id @default(cuid())
+  assetName     String
+  ticker        String?  // Optional - structured products may not have one
+  assetType     String   // STOCK | ETF | CASH | CRYPTO | STRUCTURED | TIME_DEPOSIT
+  quantity      Float
+  purchasePrice Float
+  currency      String   @default("USD")
+  purchaseDate  DateTime
+  currentPrice  Float?   // Can be null if not yet fetched
+  manualPrice   Float?   // Manual override - takes precedence over auto-fetched
+  notes         String?
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  portfolioId String
+  portfolio   Portfolio        @relation(fields: [portfolioId], references: [id], onDelete: Cascade)
+  priceHistory PriceHistory[]
+
+  @@index([portfolioId])
+  @@index([ticker])
+}
+
+// Historical price data for chart and volatility calculation
+model PriceHistory {
+  id        String   @id @default(cuid())
+  ticker    String
+  price     Float
+  currency  String
+  date      DateTime
+  source    String   @default("yahoo") // yahoo | manual | crypto
+
+  holdingId String
+  holding   Holding @relation(fields: [holdingId], references: [id], onDelete: Cascade)
+
+  @@unique([holdingId, date])
+  @@index([holdingId, date])
+}
+
+// FX rate cache to avoid hitting API too often
+model FxRate {
+  id         String   @id @default(cuid())
+  fromCurrency String
+  toCurrency   String
+  rate         Float
+  fetchedAt    DateTime @default(now())
+
+  @@unique([fromCurrency, toCurrency])
+}
+
+// AI insights cache to avoid regenerating too often
+model AiInsight {
+  id          String   @id @default(cuid())
+  portfolioId String   @unique
+  content     String
+  generatedAt DateTime @default(now())
+}

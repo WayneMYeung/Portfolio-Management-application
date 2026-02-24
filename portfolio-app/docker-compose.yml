@@ -1,0 +1,74 @@
+# ============================================
+# Portfolio Manager - Docker Compose
+# Run with: docker-compose up -d
+# ============================================
+
+version: '3.8'
+
+services:
+  portfolio-manager:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: portfolio-manager
+    restart: unless-stopped
+
+    ports:
+      - "${APP_PORT:-3000}:3000"
+
+    environment:
+      # App
+      NODE_ENV: production
+      PORT: 3000
+
+      # Database - stored in named volume
+      DATABASE_URL: file:/app/data/portfolio.db
+
+      # Auth - CHANGE THESE IN PRODUCTION
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:?NEXTAUTH_SECRET is required}
+      NEXTAUTH_URL: ${NEXTAUTH_URL:-http://localhost:3000}
+
+      # Seed credentials (used on first boot)
+      SEED_EMAIL: ${SEED_EMAIL:-admin@family.local}
+      SEED_PASSWORD: ${SEED_PASSWORD:-changeme}
+      SEED_NAME: ${SEED_NAME:-Admin}
+
+      # Optional: FX API key for higher rate limits
+      EXCHANGE_RATE_API_KEY: ${EXCHANGE_RATE_API_KEY:-}
+
+      # Optional: AI provider (mock|openai|anthropic)
+      AI_PROVIDER: ${AI_PROVIDER:-mock}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+
+    volumes:
+      # Persist SQLite database and seed flag
+      - portfolio_data:/app/data
+
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/api/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+    # Resource limits for NAS deployment
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
+
+volumes:
+  portfolio_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      # Maps to NAS path — set DATA_PATH in .env
+      device: ${DATA_PATH:-./data}
+
+networks:
+  default:
+    name: portfolio-network
