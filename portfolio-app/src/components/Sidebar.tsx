@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
   LayoutDashboard, Briefcase, BarChart3, TrendingUp,
-  Settings, TrendingDown, Menu, X
+  Settings, TrendingDown, Menu, X, Target
 } from 'lucide-react'
 import { useState } from 'react'
 import { cn } from '@/lib/utils'
@@ -14,6 +14,7 @@ const navItems = [
   { href: '/portfolios',  label: 'Portfolios',  icon: Briefcase },
   { href: '/holdings',    label: 'Holdings',    icon: TrendingUp },
   { href: '/analytics',   label: 'Analytics',   icon: BarChart3 },
+  { href: '/strategies',  label: 'Strategy Lab',icon: Target },
   { href: '/settings',    label: 'Settings',    icon: Settings },
 ]
 

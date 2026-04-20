@@ -94,3 +94,62 @@ export interface ApiResponse<T> {
   error?: string
   message?: string
 }
+
+// Strategy System Types
+export interface StrategyLeaf {
+  id: string
+  label: string        // "US Equities", "Gold ETF", "TIPS"
+  weight: number       // 0–1 (fraction of parent bucket)
+  assetType?: AssetType
+  ticker?: string      // legacy/simple target
+  tickers?: string[]   // preferred for multi-asset mapping (e.g., ["IAU", "GLD"])
+  keywords?: string[]  // text-based detection (e.g., ["Gold", "Silver"])
+}
+
+export interface StrategyBucket {
+  id: string
+  label: string
+  weight: number       // fraction of parent (root sums to 1.0)
+  children: (StrategyBucket | StrategyLeaf)[]
+}
+
+export type StrategyNode = StrategyBucket | StrategyLeaf
+
+export interface InvestmentStrategy {
+  id: string
+  name: string
+  description?: string | null
+  isActive: boolean
+  portfolioId: string
+  tree: StrategyBucket
+  createdAt: string
+  updatedAt: string
+}
+
+export interface DriftItem {
+  bucketId: string
+  label: string
+  targetPct: number
+  actualPct: number
+  driftPct: number
+  driftValue: number
+  holdings: HoldingWithAnalytics[] // Attribution for transparency
+}
+
+export interface TradeOrder {
+  action: 'BUY' | 'SELL'
+  label: string
+  bucketId: string
+  amount: number
+  pct: number
+  holdings: HoldingWithAnalytics[] // Added for transparency
+}
+
+export interface DriftReport {
+  strategyId: string
+  strategyName: string
+  totalValue: number
+  items: DriftItem[]
+  tradeOrders: TradeOrder[]
+  evaluatedAt: string
+}
