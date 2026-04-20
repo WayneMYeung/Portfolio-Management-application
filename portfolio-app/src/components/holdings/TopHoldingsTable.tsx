@@ -17,7 +17,7 @@ export default function TopHoldingsTable({ holdings, currency }: Props) {
     <table className="table">
       <thead>
         <tr>
-          <th>Asset</th>
+          <th className="text-left">Asset</th>
           <th className="text-right">Value</th>
           <th className="text-right">Allocation</th>
           <th className="text-right">Return</th>

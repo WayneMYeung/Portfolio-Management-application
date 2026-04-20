@@ -101,3 +101,32 @@ export async function fetchMarketPrices(tickers: string[]): Promise<Map<string, 
 
   return map
 }
+
+/**
+ * Backfills database with historical prices for a ticker.
+ * Fetches last 2 years of daily data from Yahoo Finance.
+ */
+export async function backfillPriceHistory(ticker: string, holdingId: string) {
+  const prisma = (await import('./prisma')).default
+  const history = await fetchHistoricalPrices(ticker, 730) // 2 years
+
+  if (history.length === 0) return
+
+  // Bulk create (SQLite handles moderate sized arrays well)
+  // We use createMany or loop depending on Prisma support for sqlite bulk create
+  try {
+    await prisma.priceHistory.createMany({
+      data: history.map(p => ({
+        ticker: ticker.toUpperCase(),
+        price: p.price,
+        currency: 'USD', // Simplified for now, in reality should fetch from meta
+        date: new Date(p.date),
+        holdingId,
+        source: 'yahoo',
+      })),
+    })
+    console.log(`[market-data] Backfilled ${history.length} price points for ${ticker}`)
+  } catch (err) {
+    console.error(`[market-data] Failed to backfill ${ticker}:`, err)
+  }
+}

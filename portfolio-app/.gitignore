@@ -11,6 +11,8 @@ out/
 prisma/portfolio.db
 prisma/portfolio.db-journal
 prisma/*.db
+**/portfolio.db
+**/portfolio.db-journal
 
 # Environment files
 .env

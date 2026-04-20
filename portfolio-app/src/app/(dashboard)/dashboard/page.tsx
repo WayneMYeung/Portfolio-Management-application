@@ -5,6 +5,7 @@ import { TrendingUp, TrendingDown, DollarSign, Briefcase, Sparkles, RefreshCw } 
 import { formatCurrency, formatPct, getGainLossColor, CHART_COLORS } from '@/lib/utils'
 import AllocationChart from '@/components/charts/AllocationChart'
 import CurrencyExposureChart from '@/components/charts/CurrencyExposureChart'
+import HistoricalValueChart from '@/components/charts/HistoricalValueChart'
 import TopHoldingsTable from '@/components/holdings/TopHoldingsTable'
 import AiInsightsPanel from '@/components/AiInsightsPanel'
 import PortfolioSelector from '@/components/PortfolioSelector'
@@ -75,12 +76,22 @@ export default function DashboardPage() {
       ) : analytics ? (
         <>
           {/* KPI Cards */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
             <KpiCard
               label="Total Value"
               value={formatCurrency(analytics.totalValue, selectedPortfolio?.baseCurrency)}
               icon={DollarSign}
               iconColor="bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400"
+            />
+            <KpiCard
+              label="Daily Change"
+              value={formatCurrency(analytics.dailyChange, selectedPortfolio?.baseCurrency)}
+              subValue={formatPct(analytics.dailyChangePct)}
+              icon={analytics.dailyChange >= 0 ? TrendingUp : TrendingDown}
+              iconColor={analytics.dailyChange >= 0
+                ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400'
+                : 'bg-rose-100 text-rose-600 dark:bg-rose-900/30 dark:text-rose-400'}
+              valueColor={getGainLossColor(analytics.dailyChange)}
             />
             <KpiCard
               label="Total Gain/Loss"
@@ -93,13 +104,14 @@ export default function DashboardPage() {
               valueColor={getGainLossColor(analytics.totalGainLoss)}
             />
             <KpiCard
-              label="Holdings"
-              value={String(analytics.holdings.length)}
+              label="Annualized Vol"
+              value={`${analytics.volatility.toFixed(1)}%`}
+              subValue={analytics.volatility > 25 ? 'High Risk' : analytics.volatility > 15 ? 'Moderate' : 'Low Risk'}
               icon={Briefcase}
-              iconColor="bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400"
+              iconColor="bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400"
             />
             <KpiCard
-              label="Concentration Risk"
+              label="Concentration"
               value={`${analytics.concentrationRisk.toFixed(1)}%`}
               subValue={analytics.concentrationRisk > 30 ? '⚠️ High' : '✅ OK'}
               icon={TrendingUp}
@@ -107,6 +119,17 @@ export default function DashboardPage() {
                 ? 'bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400'
                 : 'bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400'}
             />
+          </div>
+
+          {/* Historical Chart */}
+          <div className="card text-2xl font-bold">
+            <div className="card-header border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+              <h2 className="font-semibold text-slate-800 dark:text-slate-200">Portfolio Performance (30D)</h2>
+              <span className="text-xs font-medium text-slate-400">Values in {selectedPortfolio?.baseCurrency}</span>
+            </div>
+            <div className="card-body">
+              <HistoricalValueChart data={analytics.history} currency={selectedPortfolio?.baseCurrency ?? 'USD'} />
+            </div>
           </div>
 
           {/* Charts Row */}

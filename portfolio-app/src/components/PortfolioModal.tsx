@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { X, Save } from 'lucide-react'
 import { CURRENCIES } from '@/lib/utils'
-import type { Portfolio } from '@/types'
+import type { Portfolio, Currency } from '@/types'
 
 interface Props {
   portfolio: Portfolio | null
@@ -84,7 +84,7 @@ export default function PortfolioModal({ portfolio, onClose, onSaved }: Props) {
             <select
               className="input"
               value={form.baseCurrency}
-              onChange={e => setForm(f => ({ ...f, baseCurrency: e.target.value }))}
+              onChange={e => setForm(f => ({ ...f, baseCurrency: e.target.value as Currency }))}
             >
               {CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}
             </select>

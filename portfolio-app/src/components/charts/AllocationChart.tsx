@@ -23,6 +23,22 @@ const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, pct
   )
 }
 
+const CustomTooltip = ({ active, payload, currency }: any) => {
+  if (active && payload && payload.length) {
+    const data = payload[0].payload
+    return (
+      <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-2 rounded-lg shadow-lg outline-none">
+        <p className="text-xs font-bold text-slate-900 dark:text-slate-100">{data.name}</p>
+        <p className="text-sm font-semibold text-blue-600 dark:text-blue-400">
+          {formatCurrency(data.value, currency)}
+        </p>
+        <p className="text-[10px] text-slate-500">{data.pct.toFixed(1)}% of portfolio</p>
+      </div>
+    )
+  }
+  return null
+}
+
 export default function AllocationChart({ data, currency }: Props) {
   if (!data || data.length === 0) {
     return <div className="flex items-center justify-center h-48 text-slate-400 text-sm">No data</div>
@@ -45,15 +61,7 @@ export default function AllocationChart({ data, currency }: Props) {
             <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
           ))}
         </Pie>
-        <Tooltip
-          formatter={(v: any) => [formatCurrency(v, currency), 'Value']}
-          contentStyle={{
-            backgroundColor: 'rgba(15,23,42,0.95)',
-            border: '1px solid rgba(148,163,184,0.2)',
-            borderRadius: '8px',
-            color: '#f1f5f9',
-          }}
-        />
+        <Tooltip content={<CustomTooltip currency={currency} />} />
         <Legend
           formatter={(value, entry: any) => (
             <span className="text-xs text-slate-600 dark:text-slate-400">

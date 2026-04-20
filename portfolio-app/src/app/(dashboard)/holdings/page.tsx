@@ -1,13 +1,15 @@
 'use client'
 // src/app/(dashboard)/holdings/page.tsx
-import { useEffect, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import { Plus, Search, Filter, Edit2, Trash2, RefreshCw } from 'lucide-react'
 import { formatCurrency, formatPct, getGainLossColor, getAssetTypeLabel, ASSET_TYPES } from '@/lib/utils'
 import type { Holding, Portfolio } from '@/types'
 import HoldingModal from '@/components/HoldingModal'
+import TransactionModal from '@/components/TransactionModal'
 import { useSearchParams } from 'next/navigation'
+import { List } from 'lucide-react'
 
-export default function HoldingsPage() {
+function HoldingsContent() {
   const searchParams = useSearchParams()
   const defaultPortfolioId = searchParams.get('portfolio')
 
@@ -19,6 +21,7 @@ export default function HoldingsPage() {
   const [search, setSearch] = useState('')
   const [modalOpen, setModalOpen] = useState(false)
   const [editingHolding, setEditingHolding] = useState<Holding | null>(null)
+  const [transactionHolding, setTransactionHolding] = useState<Holding | null>(null)
   const [refreshing, setRefreshing] = useState(false)
 
   useEffect(() => {
@@ -110,8 +113,8 @@ export default function HoldingsPage() {
           <table className="table">
             <thead>
               <tr>
-                <th>Asset</th>
-                <th>Portfolio</th>
+                <th className="text-left">Asset</th>
+                <th className="text-left">Portfolio</th>
                 <th className="text-right">Qty</th>
                 <th className="text-right">Avg Cost</th>
                 <th className="text-right">Current</th>
@@ -124,9 +127,14 @@ export default function HoldingsPage() {
               {loading ? (
                 [...Array(5)].map((_, i) => (
                   <tr key={i}>
-                    {[...Array(8)].map((_, j) => (
-                      <td key={j}><div className="h-4 bg-slate-200 dark:bg-slate-700 rounded animate-pulse" /></td>
-                    ))}
+                    <td className="text-left"><div className="h-4 w-32 bg-slate-200 dark:bg-slate-700 rounded animate-pulse" /></td>
+                    <td className="text-left"><div className="h-4 w-24 bg-slate-200 dark:bg-slate-700 rounded animate-pulse" /></td>
+                    <td className="text-right"><div className="h-4 w-12 ml-auto bg-slate-200 dark:bg-slate-700 rounded animate-pulse" /></td>
+                    <td className="text-right"><div className="h-4 w-20 ml-auto bg-slate-200 dark:bg-slate-700 rounded animate-pulse" /></td>
+                    <td className="text-right"><div className="h-4 w-20 ml-auto bg-slate-200 dark:bg-slate-700 rounded animate-pulse" /></td>
+                    <td className="text-right"><div className="h-4 w-24 ml-auto bg-slate-200 dark:bg-slate-700 rounded animate-pulse" /></td>
+                    <td className="text-right"><div className="h-4 w-16 ml-auto bg-slate-200 dark:bg-slate-700 rounded animate-pulse" /></td>
+                    <td className="text-right"><div className="h-4 w-12 ml-auto bg-slate-200 dark:bg-slate-700 rounded animate-pulse" /></td>
                   </tr>
                 ))
               ) : filtered.length === 0 ? (
@@ -144,32 +152,35 @@ export default function HoldingsPage() {
 
                 return (
                   <tr key={h.id}>
-                    <td>
+                    <td className="text-left">
                       <div className="flex items-center gap-2">
                         <div>
-                          <p className="font-medium text-slate-900 dark:text-white text-sm">{h.assetName}</p>
+                          <p className="font-semibold text-slate-900 dark:text-white text-sm">{h.assetName}</p>
                           <div className="flex items-center gap-1 mt-0.5">
-                            {h.ticker && <span className="font-mono text-xs text-blue-600 dark:text-blue-400">{h.ticker}</span>}
+                            {h.ticker && <span className="font-mono text-[11px] font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 px-1 rounded">{h.ticker}</span>}
                             <span className={`badge badge-${h.assetType.toLowerCase()}`}>{getAssetTypeLabel(h.assetType)}</span>
                           </div>
                         </div>
                       </div>
                     </td>
-                    <td className="text-sm text-slate-600 dark:text-slate-400">{getPortfolioName(h.portfolioId)}</td>
-                    <td className="text-right text-sm font-mono">{h.quantity.toLocaleString()}</td>
-                    <td className="text-right text-sm font-mono">{formatCurrency(h.purchasePrice, h.currency)}</td>
-                    <td className="text-right text-sm font-mono">
+                    <td className="text-left text-sm text-slate-500 dark:text-slate-400 font-medium">{getPortfolioName(h.portfolioId)}</td>
+                    <td className="text-right text-sm font-mono tabular-nums">{h.quantity.toLocaleString()}</td>
+                    <td className="text-right text-sm font-mono tabular-nums">{formatCurrency(h.purchasePrice, h.currency)}</td>
+                    <td className="text-right text-sm font-mono tabular-nums">
                       {formatCurrency(effectivePrice, h.currency)}
-                      {h.manualPrice && <span className="text-xs text-amber-500 ml-1">M</span>}
+                      {h.manualPrice && <span className="text-[10px] bg-amber-100 text-amber-700 px-1 rounded ml-1">M</span>}
                     </td>
-                    <td className="text-right text-sm font-semibold">{formatCurrency(value, h.currency)}</td>
+                    <td className="text-right text-sm font-bold tabular-nums">{formatCurrency(value, h.currency)}</td>
                     <td className="text-right">
-                      <span className={`text-sm font-medium ${getGainLossColor(gainLoss)}`}>
+                      <span className={`text-sm font-bold tabular-nums ${getGainLossColor(gainLoss)}`}>
                         {formatPct(gainLossPct)}
                       </span>
                     </td>
                     <td className="text-right">
                       <div className="flex items-center justify-end gap-1">
+                        <button onClick={() => setTransactionHolding(h)} className="btn-ghost p-1.5 text-blue-600" title="Transactions">
+                          <List className="w-3.5 h-3.5" />
+                        </button>
                         <button onClick={() => { setEditingHolding(h); setModalOpen(true) }} className="btn-ghost p-1.5">
                           <Edit2 className="w-3.5 h-3.5" />
                         </button>
@@ -195,6 +206,22 @@ export default function HoldingsPage() {
           onSaved={loadHoldings}
         />
       )}
+      
+      {transactionHolding && (
+        <TransactionModal
+          holding={transactionHolding}
+          onClose={() => setTransactionHolding(null)}
+          onUpdated={loadHoldings}
+        />
+      )}
     </div>
+  )
+}
+
+export default function HoldingsPage() {
+  return (
+    <Suspense fallback={<div className="animate-pulse h-64 bg-slate-100 dark:bg-slate-800 rounded-2xl" />}>
+      <HoldingsContent />
+    </Suspense>
   )
 }

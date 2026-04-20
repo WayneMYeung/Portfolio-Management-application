@@ -63,15 +63,37 @@ export async function POST(req: NextRequest) {
   })
   if (!portfolio) return NextResponse.json({ error: 'Portfolio not found' }, { status: 404 })
 
-  const holding = await prisma.holding.create({
-    data: {
-      ...parsed.data,
-      purchaseDate: new Date(parsed.data.purchaseDate),
-      ticker: parsed.data.ticker ?? null,
-      manualPrice: parsed.data.manualPrice ?? null,
-      notes: parsed.data.notes ?? null,
-    },
+  // Create holding and initial transaction
+  const holding = await prisma.$transaction(async (tx) => {
+    const h = await tx.holding.create({
+      data: {
+        ...parsed.data,
+        purchaseDate: new Date(parsed.data.purchaseDate),
+        ticker: parsed.data.ticker ?? null,
+        manualPrice: parsed.data.manualPrice ?? null,
+        notes: parsed.data.notes ?? null,
+      },
+    })
+
+    await tx.transaction.create({
+      data: {
+        holdingId: h.id,
+        type: 'BUY',
+        quantity: parsed.data.quantity,
+        price: parsed.data.purchasePrice,
+        date: new Date(parsed.data.purchaseDate),
+        notes: 'Initial position',
+      },
+    })
+
+    return h
   })
+
+  // Trigger backfill in background (don't await)
+  if (holding.ticker) {
+    const { backfillPriceHistory } = await import('@/lib/market-data')
+    backfillPriceHistory(holding.ticker, holding.id).catch(console.error)
+  }
 
   return NextResponse.json({ data: holding }, { status: 201 })
 }

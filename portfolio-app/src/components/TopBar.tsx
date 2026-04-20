@@ -11,12 +11,12 @@ export default function TopBar() {
   const [refreshing, setRefreshing] = useState(false)
 
   const themeIcons: Record<string, typeof Sun> = { light: Sun, dark: Moon, system: Monitor }
-  const ThemeIcon = themeIcons[theme]
+  const ThemeIcon = themeIcons[theme] ?? Monitor
 
-  const cycleTheme = () => {
-    const themes: Array<typeof theme> = ['light', 'dark', 'system']
-    const idx = themes.indexOf(theme)
-    setTheme(themes[(idx + 1) % themes.length])
+  const toggleTheme = () => {
+    if (theme === 'system') setTheme('light')
+    else if (theme === 'light') setTheme('dark')
+    else setTheme('system')
   }
 
   const refreshPrices = async () => {
@@ -30,39 +30,52 @@ export default function TopBar() {
   }
 
   return (
-    <header className="h-14 flex items-center justify-between px-4 md:px-6 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shrink-0">
-      {/* Left: breadcrumb placeholder */}
-      <div className="text-sm text-slate-500 dark:text-slate-400">
-        {new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+    <header className="h-16 flex items-center justify-between px-6 border-b border-slate-100 dark:border-slate-800/50 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md sticky top-0 z-30">
+      {/* Left: date/info */}
+      <div className="flex items-center gap-4">
+        <div className="text-xs font-bold text-slate-400 uppercase tracking-widest hidden sm:block">
+          {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}
+        </div>
       </div>
 
       {/* Right: actions */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-3">
         <button
           onClick={refreshPrices}
           disabled={refreshing}
-          className="btn-ghost p-2 text-slate-500"
+          className="btn-ghost w-10 h-10 p-0 rounded-xl text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
           title="Refresh market prices"
         >
           <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
         </button>
 
-        <button onClick={cycleTheme} className="btn-ghost p-2 text-slate-500" title={`Theme: ${theme}`}>
+        <button 
+          onClick={toggleTheme} 
+          className="btn-ghost w-10 h-10 p-0 rounded-xl text-slate-400 hover:text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-900/20 transition-colors" 
+          title="Toggle color theme (Light/Dark/System)"
+        >
           <ThemeIcon className="w-4 h-4" />
         </button>
 
-        <div className="h-6 w-px bg-slate-200 dark:bg-slate-700" />
+        <div className="h-6 w-px bg-slate-100 dark:bg-slate-800 mx-1" />
 
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white text-xs font-bold">
+        <div className="flex items-center gap-3 pl-2">
+          <div className="flex flex-col items-end hidden md:flex">
+            <span className="text-sm font-bold text-slate-900 dark:text-white leading-none">
+              {session?.user?.name}
+            </span>
+            <span className="text-[10px] text-slate-400 font-medium">Free Plan</span>
+          </div>
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-300 text-xs font-bold border border-slate-200 dark:border-slate-700 shadow-sm">
             {session?.user?.name?.[0]?.toUpperCase() ?? 'U'}
           </div>
-          <span className="hidden sm:block text-sm font-medium text-slate-700 dark:text-slate-300">
-            {session?.user?.name}
-          </span>
         </div>
 
-        <button onClick={() => signOut({ callbackUrl: '/login' })} className="btn-ghost p-2 text-slate-500" title="Sign out">
+        <button 
+          onClick={() => signOut({ callbackUrl: '/login' })} 
+          className="btn-ghost w-10 h-10 p-0 rounded-xl text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors" 
+          title="Sign out"
+        >
           <LogOut className="w-4 h-4" />
         </button>
       </div>

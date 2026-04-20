@@ -56,8 +56,10 @@ export interface PortfolioAnalytics {
   totalCost: number
   totalGainLoss: number
   totalGainLossPct: number
-  dailyChange?: number
-  dailyChangePct?: number
+  dailyChange: number
+  dailyChangePct: number
+  volatility: number
+  history: { date: string; value: number }[]
   holdings: HoldingWithAnalytics[]
   allocationByType: { name: string; value: number; pct: number }[]
   currencyExposure: { currency: string; value: number; pct: number }[]
